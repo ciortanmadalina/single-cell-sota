@@ -1,34 +1,36 @@
 rm(list = ls())
 .rs.restartR()
-# https://hemberg-lab.github.io/scRNA.seq.course/seurat-chapter.html
-deng <- readRDS("deng/deng-reads.rds")
-
-options(stringsAsFactors = FALSE)
-
-df<-get(load('all_c_elegans/data/NeuronalGeneCount'))
-rm(NeuronalGenCount)
-df <- as.matrix(df)
-anno <- colnames(df)
-head(df[ , 1:3])
-
-deng <- SingleCellExperiment(
-  assays = list(counts = as.matrix(df)), 
-  colData = anno
-)
-
-deng
 
 library(SingleCellExperiment)
 library(Seurat)
 library(mclust)
 library(dplyr)
+options(stringsAsFactors = FALSE)
+# Pipeline inspired by
+# https://hemberg-lab.github.io/scRNA.seq.course/seurat-chapter.html
+
+# Load deng annotated data
+deng <- readRDS("single-cell-sota/input/deng-reads.rds")
+
+# Or load c-elegans data
+df<-get(load('single-cell-sota/input/NeuronalGeneCount'))
+rm(NeuronalGenCount)
+df <- as.matrix(df)
+anno <- colnames(df)
+head(df[ , 1:3])
+deng <- SingleCellExperiment(
+  assays = list(counts = as.matrix(df)), 
+  colData = anno
+)
+rm(df) # remove heavy object
+
+deng # check single cell experiment object
+
 seuset <- CreateSeuratObject(
   raw.data = counts(deng),
   min.cells = 3, 
   min.genes = 200
 )
-
-
 
 VlnPlot(
   object = seuset, 
@@ -119,7 +121,7 @@ PrintFindClustersParams(object = seuset)
 
 
 table(seuset@ident)
-write.csv(seuset@ident,'r_seurat.csv')
+write.csv(seuset@ident,'single-cell-sota/output/r_elegans_seurat.csv')
 
 
 # Validate against ground truth
