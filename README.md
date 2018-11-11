@@ -13,6 +13,7 @@ sudo docker run -d -p 8787:8787 -v $PWD/single-cell-sota:/home/rstudio/single-ce
 Ths project compares the following methods:
 - Seurat
 - Monocle
+- SC3 : freezes during clustering phase
 
 on the following datasets:
 

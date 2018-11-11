@@ -1,1 +1,0 @@
-# this approach follows: http://cole-trapnell-lab.github.io/monocle-release/docs/#theory-behind-monocle
