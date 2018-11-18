@@ -14,7 +14,12 @@ Ths project compares the following methods:
 - Seurat
 - Monocle
 - CIDR https://github.com/VCCRI/CIDR
+PCA + dropout imputation
 - SC3 : freezes during clustering phase
+- TF-IDF method:
+https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-018-4922-4  
+http://cnv1.engr.uconn.edu:3838/SCA/  
+
 
 on the following datasets:
 

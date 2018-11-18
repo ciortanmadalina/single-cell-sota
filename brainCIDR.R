@@ -67,6 +67,7 @@ scBrain <- nPC(scBrain)
 nCluster(scBrain)
 scBrain <- scCluster(scBrain)
 
+
 ## Two dimensional visualization plot output by CIDR
 ## Different colors denote the cell types annotated by the human brain single-cell RNA-Seq study
 ## Different plotting symbols denote the clusters output by CIDR
