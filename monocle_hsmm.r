@@ -1,6 +1,7 @@
 # this approach follows: http://cole-trapnell-lab.github.io/monocle-release/docs/#theory-behind-monocle
 
 # shttp://monocle-bio.sourceforge.net/tutorial.html
+
 rm(list = ls())
 .rs.restartR()
 library(monocle)

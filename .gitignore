@@ -5,4 +5,5 @@
 /.ipynb_checkpoints
 .RData
 /input/pbmc8k_filtered_gene_bc_matrices.tar.gz
+/input/outs
 .Rhistory
