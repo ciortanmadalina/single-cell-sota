@@ -9,7 +9,12 @@ library(pheatmap)
 library(mclust)
 set.seed(1234567)
 deng <- readRDS("deng/deng-reads.rds")
-deng
+
+## Write as csv
+write.csv(counts(deng),'single-cell-sota/input/deng/deng.csv')
+write.csv(colData(deng)$cell_type2,'single-cell-sota/input/deng/truth.csv')
+
+
 dim(deng)
 table(colData(deng)$cell_type2)
 

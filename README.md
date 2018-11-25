@@ -37,3 +37,14 @@ Li, J. et al. Single-cell transcriptomes reveal characteristic features of human
 
 - Peripheral Blood Mononuclear Cells (PBMCs) from a healthy donor.(wget -c http://cf.10xgenomics.com/samples/cell-exp/2.0.1/pbmc8k/pbmc8k_filtered_gene_bc_matrices.tar.gz)
 
+
+
+
+Install scanpy
+- Reduced version,
+pip install --upgrade --force-reinstall pip==9.0.3
+- Tried to re-install package
+pip install scanpy --disable-pip-version-check
+- At last, recover the latest version for pip
+pip install --upgrade pip
+
