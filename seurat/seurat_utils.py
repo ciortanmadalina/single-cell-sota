@@ -96,23 +96,25 @@ def loadData(inputDataset):
         return adata, truth
     
 def preprocess(adata, min_genes, min_cells, teta_total_features, normalize_per_cell,
-               filter_min_mean, filter_max_mean, filter_min_disp, regress_out, scale ):
+               filter_min_mean, filter_max_mean, filter_min_disp, regress_out, scale, plot_preprocessing = True, verbosity=2):
     """
     Preprocessing phase
     """
 
     adata.var_names_make_unique()
     
-    if min_genes is not None: 
+    if min_genes !=-1: 
         sc.pp.filter_cells(adata, min_genes=min_genes)  
         
-    if min_cells is not None: 
+    if min_cells !=1:
         sc.pp.filter_genes(adata, min_cells=min_cells)
         
     sc.pp.calculate_qc_metrics(adata, inplace=True)
     
-    sc.pl.scatter(adata, x='total_counts', y='total_features_by_counts')
-    if teta_total_features is not None: 
+    if plot_preprocessing:
+        sc.pl.scatter(adata, x='total_counts', y='total_features_by_counts')
+        
+    if teta_total_features != -1:
         adata = adata[adata.obs['total_features_by_counts'] < teta_total_features, :]
         
     adata.raw = sc.pp.log1p(adata, copy=True)
@@ -120,23 +122,27 @@ def preprocess(adata, min_genes, min_cells, teta_total_features, normalize_per_c
     if normalize_per_cell :
         sc.pp.normalize_per_cell(adata, counts_per_cell_after=1e4)
     
-    if filter_min_mean is not None:
+    if filter_min_mean != -1:
         filter_result = sc.pp.filter_genes_dispersion(
                         adata.X, min_mean=filter_min_mean, 
                         max_mean=filter_max_mean, 
                         min_disp=filter_min_disp)
-        print(f'Filtering {Counter(filter_result.gene_subset)}')
-        sc.pl.filter_genes_dispersion(filter_result)
+        if verbosity > 0:
+            print(f'Filtering {Counter(filter_result.gene_subset)}')
+        if plot_preprocessing:
+            sc.pl.filter_genes_dispersion(filter_result)
         
         adata = adata[:, filter_result.gene_subset]
-        print(f'Keeping {len(adata.var_names)} genes')
+        if verbosity > 0:
+            print(f'Keeping {len(adata.var_names)} genes')
     else:
-        print('No dispertion gene filter')
+        if verbosity > 0:
+            print('No dispertion gene filter')
     sc.pp.log1p(adata)
     
-    if regress_out is not None:
+    if regress_out != 'none':
         sc.pp.regress_out(adata, [regress_out])
-    if scale is not None:
+    if scale != -1:
         sc.pp.scale(adata, max_value=scale)
     return adata
 
