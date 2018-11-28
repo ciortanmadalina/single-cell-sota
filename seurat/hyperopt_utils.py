@@ -10,7 +10,7 @@ import numpy as np
 
 def getTrials(filename,restart = False ):
     if os.path.isfile(filename) and not restart:
-        trials = pickle.load(open('deng_trials.pkl', 'rb'))
+        trials = pickle.load(open(filename, 'rb'))
         print(f'Reload trials size :{len(trials)}')
     else:
         print('Creating new trials...')
