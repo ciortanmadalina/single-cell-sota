@@ -16,6 +16,9 @@ from scipy.spatial.distance import cdist
 from sklearn.mixture import GaussianMixture
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler, RobustScaler
+from sklearn.neighbors import kneighbors_graph
+import igraph as ig
+import louvain
 from sklearn.metrics.cluster import adjusted_rand_score
 import umap
 import os
@@ -131,7 +134,7 @@ def plotBestPrediction(summaryDf, dataset, pca_comp = 10):
     plt.scatter(umap2D[:, 0], umap2D[:, 1], s = 4, c = clusters)
     
     
-def run(params):
+def runGMM(params):
     df, truth = loadData(params['dataset'])
     
     # Preprocessing remove genes which don't appear in at least minCellsPerGene cells
@@ -170,6 +173,77 @@ def run(params):
     
     model = GaussianMixture(params['nb_clusters'] , covariance_type ='full', random_state = 0).fit(pc)
     clusters = model.predict(pc)
+    score = adjusted_rand_score(truth.clusters.tolist(), clusters)
+    params['randIndex'] = score
+    return params, clusters
+
+
+
+def cluster_knn_louvain(data, neighbors = 10):
+    A = kneighbors_graph(data, 10, mode='connectivity', include_self=True)
+    sources, targets = A.nonzero()
+    weights = A[sources, targets]
+    if isinstance(weights, np.matrix):
+        weights = weights.A1
+    g = ig.Graph(directed=False)
+    g.add_vertices(A.shape[0])  # this adds adjacency.shap[0] vertices
+    g.add_edges(list(zip(sources, targets)))
+
+    g.es['weight'] = weights
+    weights = np.array(g.es["weight"]).astype(np.float64)
+    partition_type = louvain.RBConfigurationVertexPartition
+    partition_kwargs = {}
+    partition_kwargs["weights"] = weights
+    part = louvain.find_partition(g, partition_type, **partition_kwargs)
+    groups = np.array(part.membership)
+    return groups
+
+def getUmap(data, ncomp = 2):
+    reducer = umap.UMAP(n_neighbors=50,
+                          min_dist=0.1, n_components=ncomp)
+    embedding2d = reducer.fit_transform(data)
+    return embedding2d
+
+def runLouvain(params):
+    df, truth = loadData(params['dataset'])
+    
+    # Preprocessing remove genes which don't appear in at least minCellsPerGene cells
+    discreteDf = np.zeros(df.shape)
+    discreteDf[np.where(df>0)] = 1
+    genesToKeep = np.where(discreteDf.sum(axis = 0)>=params['minCellsPerGene'] )[0]
+    df= df[df.columns[genesToKeep]]
+    del discreteDf 
+    
+    # Remove genes which have a very low variance as they are expressed equally in all cells
+    logDf = np.log1p(df)
+    nonZeroMean = logDf.mean(axis = 0)
+    nonZeroMean[nonZeroMean==0] = 1e-10
+    dispersion =logDf.var(axis = 0)/nonZeroMean
+    genesToKeep = np.where(dispersion>=params['minGeneDispersion'] )[0]
+    df= df[df.columns[genesToKeep]]
+    del logDf, nonZeroMean, dispersion
+
+    if params['log']:
+        df = np.log1p(df)
+        
+    # scaling
+    if params['scaler'] == 'none':
+        scaledDf = df.values
+    if params['scaler'] == 'standardScaleGenes':
+        scaledDf = StandardScaler().fit_transform(df)
+    if params['scaler'] == 'standardScaleCells':
+        scaledDf = StandardScaler().fit_transform(df.T).T
+    if params['scaler'] == 'robustScaleGenes':
+        scaledDf = RobustScaler().fit_transform(df)
+    if params['scaler'] == 'robustScaleCells':
+        scaledDf = RobustScaler().fit_transform(df.T).T
+        
+    # PCA reduction
+    data = PCA(n_components=params['pca_comp']).fit_transform(scaledDf)
+    if params['doUmap']:
+        data = getUmap(data, ncomp = params['umap_comp'])
+    
+    clusters = cluster_knn_louvain(data, neighbors = params['nb_neighbors'])
     score = adjusted_rand_score(truth.clusters.tolist(), clusters)
     params['randIndex'] = score
     return params, clusters
