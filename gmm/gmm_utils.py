@@ -122,7 +122,7 @@ def getUmap(dataset, pca_comp = 10):
 def plotBestPrediction(summaryDf, dataset, pca_comp = 10):
     df, truth = loadData(dataset)
     umap2D = getUmap(df, pca_comp = pca_comp)
-    best = summaryDf[summaryDf['result'] == summaryDf['result'].min()].iloc[0].to_dict()
+    best = summaryDf[summaryDf['_rand_index'] == summaryDf['_rand_index'].min()].iloc[0].to_dict()
     _, clusters = run(best)
     plt.figure(figsize=(14, 5))
     plt.subplot(121)
@@ -130,7 +130,7 @@ def plotBestPrediction(summaryDf, dataset, pca_comp = 10):
     plt.scatter(umap2D[:, 0], umap2D[:, 1], s = 4, c = truth.clusters)
 
     plt.subplot(122)
-    plt.title(f"Best prediction rand index {-summaryDf['result'].min()}")
+    plt.title(f"Best prediction rand index {-summaryDf['_rand_index'].min()}")
     plt.scatter(umap2D[:, 0], umap2D[:, 1], s = 4, c = clusters)
     
     
@@ -206,7 +206,7 @@ def getUmap(data, ncomp = 2):
 
 def runLouvain(params):
     df, truth = loadData(params['dataset'])
-    
+    dfOrig = df.copy()
     # Preprocessing remove genes which don't appear in at least minCellsPerGene cells
     discreteDf = np.zeros(df.shape)
     discreteDf[np.where(df>0)] = 1
@@ -244,6 +244,45 @@ def runLouvain(params):
         data = getUmap(data, ncomp = params['umap_comp'])
     
     clusters = cluster_knn_louvain(data, neighbors = params['nb_neighbors'])
-    score = adjusted_rand_score(truth.clusters.tolist(), clusters)
-    params['randIndex'] = score
+    ev = externalValidation(truth.clusters.tolist(), clusters)
+    iv = internalValidation(dfOrig, clusters)
+
+    params = {**params, **ev, **iv}
     return params, clusters
+
+
+def externalValidation(truthClusters, predictedClusters):
+    def purity_score(y_true, y_pred):
+        # compute contingency matrix (also called confusion matrix)
+        contingency_matrix = metrics.cluster.contingency_matrix(y_true, y_pred)
+        # return purity
+        return np.sum(np.amax(contingency_matrix, axis=0)) / np.sum(contingency_matrix) 
+    scores = {}
+    scores['_rand_index'] = adjusted_rand_score(truthClusters, predictedClusters)
+    scores['_homogeneity_score'] = metrics.homogeneity_score(truthClusters, predictedClusters)
+    scores['_purity_score'] = purity_score(truthClusters, predictedClusters)
+    scores['_adjusted_mutual_info_score'] = metrics.adjusted_mutual_info_score(truthClusters, predictedClusters)
+    scores['_fowlkes_mallows_score'] = metrics.fowlkes_mallows_score(truthClusters, predictedClusters)  
+    return scores
+
+
+def internalValidation(data, clusters):
+    scores = {}
+    """
+    The score is bounded between -1 for incorrect clustering and +1 for highly dense clustering. 
+    Scores around zero indicate overlapping clusters.
+    The score is higher when clusters are dense and well separated, which relates to a standard concept of a cluster.
+    """
+    scores['_silhouette_score'] =metrics.silhouette_score(data,clusters ,metric='euclidean')
+    """
+    The score is higher when clusters are dense and well separated, which relates to a standard concept of a cluster.
+    The score is fast to compute
+    """
+    scores['_calinski_harabaz_score'] = metrics.calinski_harabaz_score(data,clusters)
+    """
+    Zero is the lowest possible score. Values closer to zero indicate a better partition.
+    The Davies-Boulding index is generally higher for convex clusters than other concepts of clusters, 
+    such as density based clusters like those obtained from DBSCAN.
+    """
+    scores['_davies_bouldin_score'] = metrics.davies_bouldin_score(data,clusters)
+    return scores
