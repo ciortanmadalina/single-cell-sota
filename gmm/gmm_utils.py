@@ -136,7 +136,7 @@ def plotBestPrediction(summaryDf, dataset, pca_comp = 10):
     
 def runGMM(params):
     df, truth = loadData(params['dataset'])
-    
+    dfOrig = df.copy()
     # Preprocessing remove genes which don't appear in at least minCellsPerGene cells
     discreteDf = np.zeros(df.shape)
     discreteDf[np.where(df>0)] = 1
@@ -173,8 +173,10 @@ def runGMM(params):
     
     model = GaussianMixture(params['nb_clusters'] , covariance_type ='full', random_state = 0).fit(pc)
     clusters = model.predict(pc)
-    score = adjusted_rand_score(truth.clusters.tolist(), clusters)
-    params['randIndex'] = score
+    ev = externalValidation(truth.clusters.tolist(), clusters)
+    iv = internalValidation(dfOrig, clusters)
+
+    params = {**params, **ev, **iv}
     return params, clusters
 
 
@@ -286,3 +288,10 @@ def internalValidation(data, clusters):
     """
     scores['_davies_bouldin_score'] = metrics.davies_bouldin_score(data,clusters)
     return scores
+
+
+def plotCorrelation(resultsDf):
+    scoreColumns = [c for c in resultsDf.columns if c.startswith('_')]
+    score = resultsDf[scoreColumns]
+    score = score.astype(float)
+    sns.heatmap(score.corr(), annot=True)
