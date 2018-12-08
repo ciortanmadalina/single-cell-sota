@@ -9,3 +9,5 @@
 /seurat/cache
 /cache
 .Rhistory
+/figures
+/write
