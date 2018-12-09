@@ -22,6 +22,8 @@ import louvain
 from sklearn.metrics.cluster import adjusted_rand_score
 import umap
 import os
+from scipy import sparse, io
+
 plt.ion()
 plt.show()
 
@@ -80,6 +82,15 @@ def loadData(inputDataset):
         path = '../input/deng/'
         df = pd.read_csv(f"{path}deng.csv", index_col = 0).T
         truth = pd.read_pickle(f'{path}truth.pkl')
+        
+    if inputDataset == 'celegans':
+        path = '../input/celengans/'
+        data = sparse.load_npz(f"{path}sparse_data.npz")
+        data = data.todense()
+        df1 = pd.DataFrame(data = data)
+        df1.set_index(np.load(f"{path}cells.npy"), inplace=True)
+        df1.columns = np.load(f"{path}genes.npy")
+        return df1, None
     return df, truth
 
 
@@ -290,8 +301,10 @@ def internalValidation(data, clusters):
     return scores
 
 
-def plotCorrelation(resultsDf):
+def plotCorrelation(resultsDf, name = None):
     scoreColumns = [c for c in resultsDf.columns if c.startswith('_')]
     score = resultsDf[scoreColumns]
     score = score.astype(float)
+    if name is not None:
+        plt.title(f"Correlation for {name}")
     sns.heatmap(score.corr(), annot=True)
