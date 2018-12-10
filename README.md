@@ -32,6 +32,8 @@ Li, J. et al. Single-cell transcriptomes reveal characteristic features of human
 - Human Brain scRNA-Seq Dataset
  In this dataset there are 420 cells in 8 cell types after we exclude hybrid cells. Reference for the human brain dataset: Darmanis, S. et al. A survey of human brain transcriptome diversity at the single cell level. Proceedings of the National Academy of Sciences 112, 7285–7290 (2015).
 
+- https://github.com/LuyiTian/CellBench_data datasets: sce10x_qc, sce8_qc, sce2_qc
+
 - C-elegans
 
 
