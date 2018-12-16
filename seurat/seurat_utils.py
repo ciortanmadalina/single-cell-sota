@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..") # this adds to path parent directory in order to import utils file
 import numpy as np
 import pandas as pd
 import scanpy.api as sc
@@ -6,6 +8,7 @@ from collections import Counter
 import os.path
 from sklearn.metrics.cluster import adjusted_rand_score
 import matplotlib.pyplot as plt
+import utils
 plt.ion()
 plt.show()
 sc.settings.set_figure_params(dpi=80)
@@ -93,6 +96,20 @@ def loadData(inputDataset):
             truth['clusters'] = truth['truth'].cat.codes
             truth.drop('x', axis = 1, inplace = True)
             truth.to_pickle(f'{path}truth.pkl')
+        return adata, truth
+    if inputDataset in [ 'sce10x_qc', 'sce2_qc', 'sce8_qc']:
+        df, truth = utils.loadData(inputDataset)
+        path = f'../input/cellBench/{inputDataset}/'
+        if os.path.isfile(f'{path}matrix.mtx') == False:
+            df = df.T
+            np.save(f'{path}cells.npy',  df.columns)
+            np.save(f'{path}genes.npy', df.index.values)
+            print(df.shape)
+            df.head()
+            m = sparse.csr_matrix(df.as_matrix())
+            io.mmwrite(f'{path}matrix.mtx', m)
+            del m, df
+        adata = loadAdata(path)
         return adata, truth
     
 def preprocess(adata, min_genes, min_cells, teta_total_features, normalize_per_cell,
@@ -189,15 +206,23 @@ def filterDictionary(params, prefix = 'preprocess_'):
 
 def run(params):
     adata, truth = loadData(params['load_inputDataset'])
+    # load pandas df for internal validation
+    df, _ = utils.loadData(params['load_inputDataset'])
     print(f"Loading dataset {params['load_inputDataset']} with {adata.var_names.shape[0]} genes and {adata.obs_names.shape[0]} cells")
 
     preprocess(adata,**filterDictionary(params, prefix = 'preprocess_'))
     cells, clusters = clustering(adata, **filterDictionary(params, prefix = 'cluster_'))
-    evalParams = {}
-    evalParams['cells'] = cells
-    evalParams['clusters'] = clusters
-    evalParams['umapCoord'] = adata.obsm['X_umap'] if params['evaluate_plot_results'] else None
-    randIndex = evaluate(truth, **evalParams)
-    params['randIndex'] = randIndex
-    print (f"Rand_index {randIndex}")
+    params['#clusters'] = len(np.unique(clusters))
+#     evalParams = {}
+#     evalParams['cells'] = cells
+#     evalParams['clusters'] = clusters
+#     evalParams['umapCoord'] = adata.obsm['X_umap'] if params['evaluate_plot_results'] else None
+
+#     truth = truth[truth.index.isin(cells)].clusters.tolist()
+    truth = truth[truth.truth.isin(cells)].clusters.tolist()
+    
+    ev = utils.externalValidation(truth, clusters)
+    iv = utils.internalValidation(df[df.index.isin(cells)], clusters)
+
+    params = {**params, **ev, **iv}
     return params

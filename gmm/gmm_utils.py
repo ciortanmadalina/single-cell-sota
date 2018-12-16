@@ -1,3 +1,6 @@
+import sys
+sys.path.append("..") # this adds to path parent directory in order to import utils file
+
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,7 +13,6 @@ import numpy as np
 from sklearn import metrics
 from sklearn.metrics import pairwise_distances
 from IPython.display import clear_output, Image, display
-from sklearn.datasets.samples_generator import make_blobs
 import itertools
 from scipy.spatial.distance import cdist
 from sklearn.mixture import GaussianMixture
@@ -24,6 +26,8 @@ import umap
 import os
 from scipy import sparse, io
 
+# Import utils
+import utils
 plt.ion()
 plt.show()
 
@@ -63,35 +67,6 @@ def silhouetteAnalyis (X, numberOfClusters):
     Optimal_NumberOf_Components=numberOfClusters[silhouette_score_values.index(max(silhouette_score_values))]
     print( "Optimal number of components is:", Optimal_NumberOf_Components)
     
-    
-def loadData(inputDataset):
-    """
-    Load input dataset
-    """
-    if inputDataset == 'brainCIDR':
-        path = '../input/brainCIDR/'
-        df = pd.read_csv(f"{path}brainTags.csv", index_col = 0).T
-        truth = pd.read_pickle(f'{path}truth.pkl')
-    
-    if inputDataset == 'pancreaticIsletCIDR':
-        path = '../input/pancreaticIsletCIDR/'
-        df = pd.read_csv(f"{path}pancreaticIsletTags.csv", index_col = 0).T
-        truth = pd.read_pickle(f'{path}truth.pkl')
-    
-    if inputDataset == 'deng':
-        path = '../input/deng/'
-        df = pd.read_csv(f"{path}deng.csv", index_col = 0).T
-        truth = pd.read_pickle(f'{path}truth.pkl')
-        
-    if inputDataset == 'celegans':
-        path = '../input/celengans/'
-        data = sparse.load_npz(f"{path}sparse_data.npz")
-        data = data.todense()
-        df1 = pd.DataFrame(data = data)
-        df1.set_index(np.load(f"{path}cells.npy"), inplace=True)
-        df1.columns = np.load(f"{path}genes.npy")
-        return df1, None
-    return df, truth
 
 
 def optimalNbClustersGMM(pc, c_min, c_max, top = 2, plot = False):
@@ -146,7 +121,7 @@ def plotBestPrediction(summaryDf, dataset, pca_comp = 10):
     
     
 def runGMM(params):
-    df, truth = loadData(params['dataset'])
+    df, truth = utils.loadData(params['dataset'])
     dfOrig = df.copy()
     # Preprocessing remove genes which don't appear in at least minCellsPerGene cells
     discreteDf = np.zeros(df.shape)
@@ -218,7 +193,7 @@ def getUmap(data, ncomp = 2):
     return embedding2d
 
 def runLouvain(params):
-    df, truth = loadData(params['dataset'])
+    df, truth = utils.loadData(params['dataset'])
     dfOrig = df.copy()
     # Preprocessing remove genes which don't appear in at least minCellsPerGene cells
     discreteDf = np.zeros(df.shape)
