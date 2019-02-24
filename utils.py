@@ -17,8 +17,8 @@ from sklearn.mixture import GaussianMixture
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.neighbors import kneighbors_graph
-import igraph as ig
-import louvain
+# import igraph as ig
+# import louvain
 from sklearn.metrics.cluster import adjusted_rand_score
 import umap
 import os
