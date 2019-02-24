@@ -20,6 +20,7 @@ from sklearn.neighbors import kneighbors_graph
 # import igraph as ig
 # import louvain
 from sklearn.metrics.cluster import adjusted_rand_score
+from sklearn.cluster import KMeans
 # import umap
 import os
 from scipy import sparse, io
